@@ -1,0 +1,42 @@
+# Two services on one network: the application and its database.
+#   docker compose up --build     start
+#   docker compose down           stop, keep the volume
+#   docker compose down -v        stop and delete the volume
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION:-1.0.0-local}
+    ports:
+      - "8000:8000"
+    environment:
+      # "db" is the DNS name of the database container on the compose network.
+      DATABASE_URL: postgresql://taskboard:${POSTGRES_PASSWORD:-changeme}@db:5432/taskboard
+      LOG_LEVEL: INFO
+      # Safe to run several workers here: Postgres holds the shared state.
+      GUNICORN_WORKERS: 2
+    depends_on:
+      db:
+        # Without this condition web starts before Postgres accepts connections.
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskboard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: taskboard
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskboard -d taskboard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db-data:
