@@ -1,0 +1,30 @@
+[project]
+name = "taskboard"
+version = "1.0.0"
+description = "Reference application used throughout module CDS212 (DevOps)"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# Put the project root on sys.path so `from app import ...` resolves in the
+# tests. Without this, a bare `pytest` fails with ModuleNotFoundError while
+# `python -m pytest` happens to work — a difference that bites in CI.
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+# The CI pipeline (week 5) fails the build when coverage drops below this.
+fail_under = 80
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E,F = pycodestyle/pyflakes, I = import sorting, B = common bugs,
+# UP = outdated Python idioms
+select = ["E", "F", "I", "B", "UP"]
