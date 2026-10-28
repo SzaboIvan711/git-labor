@@ -1,3 +1,4 @@
+![CI](https://github.com/SzaboIvan711/git-labor/actions/workflows/ci.yml/badge.svg)
 # git-labor
 
 ## Branching-Strategie

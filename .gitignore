@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.coverage
+*.swp
+dist/
+*.egg-info/
