@@ -74,5 +74,5 @@ jobs:
             echo "APP_URL variable is not set" >&2
             exit 1
           fi
-          chmod +x woche-06-continuous-deployment-cloud/code/smoke-test.sh
-          woche-06-continuous-deployment-cloud/code/smoke-test.sh "${APP_URL}"
+          chmod +x beispiel-app/tests/smoke-test.sh
+          beispiel-app/tests/smoke-test.sh "${APP_URL}"
