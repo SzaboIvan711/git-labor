@@ -1,0 +1,72 @@
+# Render Blueprint (Infrastructure as Code for Render).
+#
+# This file describes the Taskboard web service declaratively. Render discovers
+# it only at the ROOT of the connected repository, so in the course repo it
+# belongs at cds-devops/render.yaml (copy it up from here). All paths below are
+# relative to that repository root.
+#
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Only fields confirmed against the Blueprint spec are used. When in doubt, a
+# field is left out and configured in the dashboard instead.
+
+services:
+  - type: web
+    name: taskboard
+    runtime: docker
+
+    # Free instance type: spins down after 15 minutes without inbound traffic
+    # and needs up to a minute to wake up on the next request. Good enough for
+    # a course, not for production. Frankfurt is the region closest to
+    # Switzerland; the region cannot be changed after the service is created.
+    # Free-tier availability per region is per Render's docs and can change
+    # (see render.com/docs/free); switch to another region if free is rejected.
+    plan: free
+    region: frankfurt
+    branch: main
+
+    # Build the image from the app's Dockerfile. dockerContext is the build
+    # context handed to `docker build`; the Dockerfile COPYs (app/, wsgi.py,
+    # requirements.txt) are all relative to it.
+    dockerfilePath: ./beispiel-app/Dockerfile
+    dockerContext: ./beispiel-app
+
+    # No start-command override needed: the image already binds to 8000 and
+    # starts a single gunicorn worker by default (ENV GUNICORN_WORKERS=1). The
+    # worker count is steered below through GUNICORN_WORKERS, not by overriding
+    # the command.
+
+    # Render probes this path over HTTP and only routes traffic to a new deploy
+    # once it returns 2xx/3xx. Must be /health (liveness, no database), never
+    # /ready (readiness) — see docs/03 and docs/04.
+    healthCheckPath: /health
+
+    # Deploy automatically on every push to `branch`. Set to `off` when you want
+    # CI to gate deploys and trigger them from GitHub Actions via a deploy hook
+    # instead (see code/cd.yml); `checksPass` waits for connected checks first.
+    # Field name is per the current Blueprint spec (render.com/docs/blueprint-spec)
+    # and may evolve; if a deploy rejects it, use the dashboard Auto-Deploy toggle.
+    autoDeployTrigger: commit
+
+    envVars:
+      # Render assigns the public port through PORT (its default is 10000). Our
+      # container listens on a fixed 8000, so we pin PORT to 8000 to align the
+      # platform with the container.
+      - key: PORT
+        value: "8000"
+      # One worker on purpose. Without DATABASE_URL the app keeps its tasks in
+      # the memory of a single process; a second worker would serve a second,
+      # different task list (a task created on worker A is a 404 on worker B).
+      # This already IS the image default; we pin it here to make the choice
+      # explicit. Attach Postgres for real multi-user traffic, then raise it.
+      - key: GUNICORN_WORKERS
+        value: "1"
+      # Shown in /health and /metrics. Bump this on every release so a deploy is
+      # observable from the outside (the smoke test reads it back).
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: LOG_LEVEL
+        value: INFO
+      # DATABASE_URL is intentionally NOT set here: unset => in-memory store,
+      # which is what the free-tier walkthrough uses. To run against Postgres,
+      # add a `databases:` block and reference it with fromDatabase.
