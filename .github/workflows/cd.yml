@@ -1,0 +1,78 @@
+# Continuous Deployment for Taskboard.
+#
+# Trigger the Render deploy only after CI has passed on main, then smoke-test
+# the running service. Belongs at .github/workflows/cd.yml in the repo root.
+#
+# Requires (see code/README.md for how to create them):
+#   - secret RENDER_DEPLOY_HOOK : the service's deploy hook URL (Render dashboard)
+#   - variable APP_URL          : the public service URL, e.g.
+#                                 https://taskboard-xxxx.onrender.com
+#
+# This workflow assumes the CI workflow (week 5) is named "CI". Adjust the name
+# under workflow_run.workflows if yours differs.
+
+name: CD
+
+on:
+  # Run after the CI workflow completes on main. workflow_run always fires;
+  # the job's `if` below keeps us from deploying a red build.
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  # Allow a manual deploy from the Actions tab.
+  workflow_dispatch:
+
+# The workflow only reads the repo and calls an external URL.
+permissions:
+  contents: read
+
+# Never let two deploys race; a newer push supersedes an in-flight deploy.
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Deploy on a manual run, or only when the upstream CI run succeeded.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "${RENDER_DEPLOY_HOOK}" ]; then
+            echo "RENDER_DEPLOY_HOOK secret is not set" >&2
+            exit 1
+          fi
+          # The hook returns 200 with a deploy id, or 202 if a deploy is already
+          # running. --fail turns a 4xx/5xx (e.g. 401 bad key) into a job error.
+          echo "Triggering Render deploy..."
+          curl --fail --silent --show-error --request POST "${RENDER_DEPLOY_HOOK}"
+          echo
+
+      - name: Wait for the deploy to roll out
+        # The hook only *starts* the deploy; the build and release take a few
+        # minutes. We wait a fixed amount and then let the smoke test poll with
+        # backoff. A stricter setup would poll the Render Deploy API for the
+        # deploy status instead of sleeping.
+        run: sleep "${WAIT_SECONDS:-90}"
+        env:
+          WAIT_SECONDS: "90"
+
+      - name: Smoke-test the running service
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "${APP_URL}" ]; then
+            echo "APP_URL variable is not set" >&2
+            exit 1
+          fi
+          chmod +x woche-06-continuous-deployment-cloud/code/smoke-test.sh
+          woche-06-continuous-deployment-cloud/code/smoke-test.sh "${APP_URL}"
