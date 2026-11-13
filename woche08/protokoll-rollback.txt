@@ -1,0 +1,33 @@
+=== BEFORE ROLLBACK ===
+deployment.apps/taskboard 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+3         <none>
+4         <none>
+
+=== CURRENT IMAGE ===
+taskboard:local
+=== ROLLBACK ===
+deployment.apps/taskboard rolled back
+=== ROLLOUT STATUS ===
+Waiting for deployment "taskboard" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "taskboard" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "taskboard" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "taskboard" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "taskboard" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "taskboard" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "taskboard" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "taskboard" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "taskboard" rollout to finish: 1 old replicas are pending termination...
+deployment "taskboard" successfully rolled out
+=== AFTER ROLLBACK ===
+deployment.apps/taskboard 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+4         <none>
+5         <none>
+
+=== ACTIVE IMAGE ===
+taskboard:v2
