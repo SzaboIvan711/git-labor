@@ -1,0 +1,6 @@
+Skalierung: deklarativ, replicas: 3 in deployment.yaml
+Zeitpunkt: 2026-11-13T16:15:30+01:00
+NAME                         READY   STATUS    RESTARTS   AGE   IP           NODE                NOMINATED NODE   READINESS GATES
+taskboard-56794d57dd-7sd2j   1/1     Running   0          32s   10.244.2.3   taskboard-worker2   <none>           <none>
+taskboard-56794d57dd-ct67w   1/1     Running   0          32s   10.244.1.2   taskboard-worker    <none>           <none>
+taskboard-56794d57dd-vdrp4   1/1     Running   0          32s   10.244.2.2   taskboard-worker2   <none>           <none>

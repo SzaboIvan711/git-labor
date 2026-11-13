@@ -1,0 +1,24 @@
+# Stable in-cluster address for the pods. Pods are short-lived and change their
+# IP; the Service stays constant. It finds its pods via the selector
+# (app: taskboard) and load-balances requests across all READY pods.
+#
+# In-cluster DNS name: taskboard.taskboard.svc.cluster.local
+# (scheme: <service>.<namespace>.svc.cluster.local)
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskboard
+  namespace: taskboard
+  labels:
+    app: taskboard
+spec:
+  type: ClusterIP
+  selector:
+    app: taskboard
+  ports:
+    - name: http
+      port: 80
+      # targetPort is the container port (8000). A wrong value here is a common
+      # mistake: the Service is reachable but only returns timeouts.
+      targetPort: 8000
+      protocol: TCP
